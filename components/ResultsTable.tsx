@@ -101,6 +101,13 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ leads, onRemove, onD
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="space-y-1">
+                    {lead.email && (
+                      <div className="flex items-center text-sm text-slate-600 mb-1">
+                        <Mail className="w-3.5 h-3.5 mr-2 text-rose-500" />
+                        <span className="truncate max-w-[150px]" title={lead.email}>{lead.email}</span>
+                      </div>
+                    )}
+                    
                     {lead.phone ? (
                       <div className="flex items-center text-sm text-slate-600">
                         <Phone className="w-3.5 h-3.5 mr-2 text-indigo-500" />

@@ -3,12 +3,13 @@ import { Lead } from '../types';
 export const exportToCSV = (leads: Lead[], filename: string) => {
   if (!leads || leads.length === 0) return;
 
-  const headers = ['Business Name', 'Phone Number', 'Website URL', 'Street Address', 'Rating', 'Reviews', 'Description'];
+  const headers = ['Business Name', 'Email Address', 'Phone Number', 'Website URL', 'Street Address', 'Rating', 'Reviews', 'Description'];
   const csvContent = [
     headers.join(','),
     ...leads.map(lead => {
       const row = [
         `"${lead.name.replace(/"/g, '""')}"`,
+        `"${(lead.email || '').replace(/"/g, '""')}"`,
         `"${(lead.phone || '').replace(/"/g, '""')}"`,
         `"${(lead.website || '').replace(/"/g, '""')}"`,
         `"${(lead.address || '').replace(/"/g, '""')}"`,

@@ -20,6 +20,7 @@ const App: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
   const [errorMsg, setErrorMsg] = useState<string>('');
+  const [loadingStatus, setLoadingStatus] = useState<string>('');
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
   const [showHelp, setShowHelp] = useState<boolean>(false);
   const [showPricing, setShowPricing] = useState<boolean>(false);
@@ -102,11 +103,19 @@ const App: React.FC = () => {
     if (!params.term || !params.location) return;
 
     setAppState(AppState.LOADING);
+    setLoadingStatus('Initializing AI agent...');
     setErrorMsg('');
     setLeads([]);
 
     try {
-      const data = await findLeads(params.term, params.location, params.count);
+      const data = await findLeads(
+        params.term, 
+        params.location, 
+        params.count,
+        (currentCount) => {
+          setLoadingStatus(`Found ${currentCount} / ${params.count} leads...`);
+        }
+      );
       setLeads(data);
       setAppState(AppState.SUCCESS);
       addToHistory(params, data.length);
@@ -306,7 +315,7 @@ const App: React.FC = () => {
                   {appState === AppState.LOADING ? (
                     <>
                       <Loader2 className="animate-spin -ml-1 mr-2 h-4 w-4" />
-                      Scanning Maps...
+                      {loadingStatus || 'Scanning Maps...'}
                     </>
                   ) : (
                     <>

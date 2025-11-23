@@ -4,6 +4,7 @@ export interface Lead {
   address: string;
   phone: string;
   website: string;
+  email?: string; // Added email field
   rating?: number;
   reviewCount?: number;
   description?: string;
