@@ -1,0 +1,5 @@
+{
+  "name": "LeadGen Pro AI",
+  "description": "Professional lead generation tool utilizing Gemini 2.5 and Google Maps Grounding for high-quality business data extraction.",
+  "requestFramePermissions": []
+}
