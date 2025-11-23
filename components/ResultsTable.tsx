@@ -1,13 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Lead } from '../types';
-import { Globe, Phone, MapPin, Building2, Star, Trash2 } from 'lucide-react';
+import { Globe, Phone, MapPin, Building2, Star, Trash2, ArrowUpDown, Sparkles, Mail } from 'lucide-react';
 
 interface ResultsTableProps {
   leads: Lead[];
   onRemove: (id: string) => void;
+  onDraftEmail: (lead: Lead) => void;
 }
 
-export const ResultsTable: React.FC<ResultsTableProps> = ({ leads, onRemove }) => {
+type SortField = 'rating' | 'reviewCount' | null;
+type SortDirection = 'asc' | 'desc';
+
+export const ResultsTable: React.FC<ResultsTableProps> = ({ leads, onRemove, onDraftEmail }) => {
+  const [sortField, setSortField] = useState<SortField>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const sortedLeads = [...leads].sort((a, b) => {
+    if (!sortField) return 0;
+    
+    const valA = a[sortField] || 0;
+    const valB = b[sortField] || 0;
+
+    return sortDirection === 'asc' ? valA - valB : valB - valA;
+  });
+
   if (leads.length === 0) {
     return (
       <div className="text-center py-16 bg-white rounded-xl border border-slate-200 shadow-sm border-dashed">
@@ -28,11 +53,18 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ leads, onRemove }) =
         <table className="min-w-full divide-y divide-slate-200">
           <thead className="bg-slate-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
+              <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider w-1/3">
                 Business Details
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Rating
+              <th 
+                scope="col" 
+                className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider cursor-pointer hover:bg-slate-100 transition-colors"
+                onClick={() => handleSort('rating')}
+              >
+                <div className="flex items-center">
+                  Rating
+                  <ArrowUpDown className={`ml-1.5 w-3 h-3 ${sortField === 'rating' ? 'text-indigo-600' : 'text-slate-400'}`} />
+                </div>
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">
                 Contact Info
@@ -46,7 +78,7 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ leads, onRemove }) =
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-200">
-            {leads.map((lead) => (
+            {sortedLeads.map((lead) => (
               <tr key={lead.id} className="hover:bg-slate-50 transition-colors group">
                 <td className="px-6 py-4">
                   <div className="flex flex-col">
@@ -104,13 +136,22 @@ export const ResultsTable: React.FC<ResultsTableProps> = ({ leads, onRemove }) =
                   )}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => onRemove(lead.id)}
-                    className="text-slate-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-red-50 opacity-0 group-hover:opacity-100 focus:opacity-100"
-                    title="Remove entry"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div className="flex items-center justify-end space-x-2">
+                    <button
+                      onClick={() => onDraftEmail(lead)}
+                      className="text-slate-400 hover:text-indigo-600 transition-colors p-2 rounded-full hover:bg-indigo-50"
+                      title="Draft AI Email"
+                    >
+                      <Mail className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => onRemove(lead.id)}
+                      className="text-slate-400 hover:text-red-600 transition-colors p-2 rounded-full hover:bg-red-50"
+                      title="Remove entry"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

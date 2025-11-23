@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { Lead } from '../types';
 
-const cleanJsonString = (str: string): string => {
+export const cleanJsonString = (str: string): string => {
   let cleaned = str.trim();
   if (cleaned.startsWith('```json')) {
     cleaned = cleaned.replace(/^```json/, '');
@@ -92,5 +92,45 @@ export const findLeads = async (term: string, location: string, count: number): 
       throw new Error("You are searching too fast. Please wait a moment.");
     }
     throw error;
+  }
+};
+
+export const generateColdEmail = async (businessName: string, industry: string, location: string): Promise<{subject: string, body: string}> => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API Key missing");
+
+  const ai = new GoogleGenAI({ apiKey });
+
+  const prompt = `
+    You are an expert B2B sales copywriter.
+    Write a short, punchy, and professional cold outreach email to "${businessName}", a business in the "${industry}" industry located in "${location}".
+    
+    The goal is to offer "Digital Marketing & Lead Generation Services" to help them grow.
+    
+    Requirements:
+    - Tone: Professional, slightly casual, not spammy.
+    - Length: Under 120 words.
+    - Structure: Return a JSON object with "subject" and "body" keys.
+    - "body" should contain the email text. Use [Your Name] as a placeholder for the sender.
+
+    Output format: JSON ONLY.
+    {
+      "subject": "String",
+      "body": "String"
+    }
+  `;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: prompt
+  });
+
+  const text = response.text;
+  if (!text) throw new Error("Failed to generate email");
+
+  try {
+    return JSON.parse(cleanJsonString(text));
+  } catch (e) {
+    throw new Error("Failed to parse email format");
   }
 };

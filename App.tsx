@@ -1,11 +1,12 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { Search, MapPin, Download, Loader2, Database, AlertCircle, Clock, ArrowRight, HelpCircle, Lock, Crown } from 'lucide-react';
-import { findLeads } from './services/geminiService';
+import { findLeads, generateColdEmail } from './services/geminiService';
 import { exportToCSV } from './utils/csvHelper';
 import { Lead, AppState, SearchParams, SearchHistoryItem, PlanTier } from './types';
 import { ResultsTable } from './components/ResultsTable';
 import { HelpModal } from './components/HelpModal';
 import { PricingModal, PLANS } from './components/PricingModal';
+import { EmailDraftModal } from './components/EmailDraftModal';
 
 const STORAGE_KEY = 'leadgen_history';
 const PLAN_KEY = 'leadgen_plan';
@@ -23,6 +24,12 @@ const App: React.FC = () => {
   const [showHelp, setShowHelp] = useState<boolean>(false);
   const [showPricing, setShowPricing] = useState<boolean>(false);
   const [currentPlan, setCurrentPlan] = useState<PlanTier>('FREE');
+
+  // Email Draft State
+  const [emailModalOpen, setEmailModalOpen] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [emailData, setEmailData] = useState<{subject: string, body: string} | null>(null);
+  const [selectedLeadName, setSelectedLeadName] = useState('');
 
   // Load history and plan on mount
   useEffect(() => {
@@ -114,6 +121,28 @@ const App: React.FC = () => {
     setLeads(prev => prev.filter(l => l.id !== id));
   }, []);
 
+  const handleDraftEmail = useCallback(async (lead: Lead) => {
+    if (currentPlan === 'FREE') {
+      setShowPricing(true);
+      return;
+    }
+
+    setSelectedLeadName(lead.name);
+    setEmailModalOpen(true);
+    setEmailLoading(true);
+    setEmailData(null);
+
+    try {
+      const result = await generateColdEmail(lead.name, params.term, params.location);
+      setEmailData(result);
+    } catch (e) {
+      console.error("Failed to generate email", e);
+      // We could set a specific error state for the modal here
+    } finally {
+      setEmailLoading(false);
+    }
+  }, [currentPlan, params.term, params.location]);
+
   const handleExport = useCallback(() => {
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     exportToCSV(leads, `leads_${params.term.replace(/\s+/g, '_')}_${timestamp}.csv`);
@@ -129,6 +158,13 @@ const App: React.FC = () => {
         onClose={() => setShowPricing(false)} 
         currentPlan={currentPlan}
         onUpgrade={handleUpgrade}
+      />
+      <EmailDraftModal 
+        isOpen={emailModalOpen}
+        onClose={() => setEmailModalOpen(false)}
+        loading={emailLoading}
+        businessName={selectedLeadName}
+        emailData={emailData}
       />
 
       {/* Header */}
@@ -357,7 +393,11 @@ const App: React.FC = () => {
             </div>
 
             {/* Main Table */}
-            <ResultsTable leads={leads} onRemove={handleRemoveLead} />
+            <ResultsTable 
+              leads={leads} 
+              onRemove={handleRemoveLead} 
+              onDraftEmail={handleDraftEmail}
+            />
 
           </div>
         </div>
